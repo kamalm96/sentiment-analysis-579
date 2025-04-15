@@ -95,19 +95,40 @@ def train_sentiment_model(X_train, y_train, X_val, y_val, batch_size=16, epochs=
 
 def evaluate_on_test_data(model, tokenizer, X_test, y_test):
     print("\nEvaluating model on test data...")
-    predictions, probabilities = predict_sentiment(model, tokenizer, X_test, device)
 
-    accuracy = accuracy_score(y_test, predictions)
-    report = classification_report(y_test, predictions)
+    batch_size = 32
+    all_predictions = []
+    all_probabilities = []
+
+    for i in range(0, len(X_test), batch_size):
+        end_idx = min(i + batch_size, len(X_test))
+        batch_texts = X_test[i:end_idx]
+
+        batch_predictions, batch_probabilities = predict_sentiment(
+            model, tokenizer, batch_texts, device
+        )
+        all_predictions.extend(batch_predictions)
+        all_probabilities.extend(batch_probabilities)
+
+    print(f"Test samples: {len(y_test)}, Predictions: {len(all_predictions)}")
+
+    if len(all_predictions) != len(y_test):
+        print("WARNING: Prediction count doesn't match test sample count!")
+        min_len = min(len(all_predictions), len(y_test))
+        all_predictions = all_predictions[:min_len]
+        y_test = y_test[:min_len]
+
+    accuracy = accuracy_score(y_test, all_predictions)
+    report = classification_report(y_test, all_predictions)
 
     print(f"Test Accuracy: {accuracy:.4f}")
     print(report)
 
-    confidence_scores = [max(probs) for probs in probabilities]
+    confidence_scores = [max(probs) for probs in all_probabilities]
     avg_confidence = sum(confidence_scores) / len(confidence_scores)
     print(f"Average prediction confidence: {avg_confidence:.4f}")
 
-    return predictions, probabilities
+    return all_predictions, all_probabilities
 
 
 def get_reddit_comments(subreddit_name, limit=100):
@@ -124,7 +145,7 @@ def get_reddit_comments(subreddit_name, limit=100):
     for submission in subreddit.hot(limit=10):
         submission.comments.replace_more(limit=0)
         for comment in submission.comments.list():
-            if len(comment.body) > 5:  
+            if len(comment.body) > 5:
                 comments.append(comment.body)
                 if len(comments) >= limit:
                     return comments
