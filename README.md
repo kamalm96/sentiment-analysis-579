@@ -2,7 +2,7 @@
 
 ```pip install -r requirements.txt```
 
-```python main.py```
+```python main.py``` <- Should take around 5-20 minutes depending on GPU.
 
-```python demo-test.py```
+```python demo-test.py``` <- Will allow you to enter your own sentences to test.
 
