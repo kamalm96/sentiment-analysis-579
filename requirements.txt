@@ -1,0 +1,10 @@
+pandas
+numpy
+scikit-learn
+nltk
+imbalanced-learn
+praw
+python-dotenv
+joblib
+torch
+transformers
